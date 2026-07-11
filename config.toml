@@ -1,0 +1,113 @@
+# Secret Scanner Configuration File
+
+[entropy]
+# Shannon entropy threshold for flagging high entropy strings (e.g. random keys)
+# Set high to avoid false positives. 4.5 is a good balance for base64/alphanumeric strings.
+threshold = 4.5
+min_length = 16
+# Keywords to trigger entropy checks on surrounding words (case-insensitive)
+keywords = ["key", "secret", "token", "password", "pwd", "auth", "credential", "private", "access"]
+
+[ignore]
+# Directories to always skip during scanning
+directories = [
+    "node_modules",
+    ".git",
+    "venv",
+    "env",
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    "build",
+    "dist",
+    ".egg-info",
+    "target",
+    "bin",
+    "obj"
+]
+
+# File names to always skip
+files = [
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "poetry.lock",
+    "Gemfile.lock",
+    "Cargo.lock",
+    "composer.lock",
+    "mix.lock"
+]
+
+# Extensions to always skip
+extensions = [
+    # Images/Media
+    "png", "jpg", "jpeg", "gif", "ico", "svg", "webp", "mp4", "mp3", "pdf", "woff", "woff2", "ttf", "eot",
+    # Archives
+    "zip", "tar", "gz", "rar", "7z",
+    # Binaries/Compiled
+    "pyc", "pyo", "so", "dll", "dylib", "exe", "class", "o", "a",
+    # Data/Local
+    "db", "sqlite", "sqlite3"
+]
+
+# Custom Regex Patterns for Known Secrets
+[[rules]]
+name = "AWS Access Key ID"
+pattern = '\b(?:AKIA|ASCA|AGPA|AIDA)[0-9A-Z]{16}\b'
+description = "Detected AWS Access Key ID, which exposes access to AWS accounts."
+
+[[rules]]
+name = "AWS Secret Access Key"
+# Matches aws_secret_access_key = "..." or similar assignments with high-entropy base64 value
+pattern = '(?i)(?:aws_secret|aws_secret_access_key|aws_key)\s*[:=]\s*["\']([A-Za-z0-9/+=]{40})["\']'
+description = "Detected potential AWS Secret Access Key."
+
+[[rules]]
+name = "GitHub Personal Access Token (Classic)"
+pattern = '\bghp_[a-zA-Z0-9]{36}\b'
+description = "Detected GitHub Personal Access Token (Classic)."
+
+[[rules]]
+name = "GitHub Fine-Grained Token"
+pattern = '\bgithub_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}\b'
+description = "Detected GitHub Fine-Grained Personal Access Token."
+
+[[rules]]
+name = "Slack Bot Token"
+pattern = '\bxoxb-[0-9a-zA-Z]{10,48}\b'
+description = "Detected Slack Bot Token."
+
+[[rules]]
+name = "Slack User Token"
+pattern = '\bxoxp-[0-9a-zA-Z]{10,48}\b'
+description = "Detected Slack User Token."
+
+[[rules]]
+name = "Slack Webhook"
+pattern = 'https://hooks\.slack\.com/services/[T[a-zA-Z0-9_]{8,11}/B[a-zA-Z0-9_]{8,11}/[a-zA-Z0-9_]{24}'
+description = "Detected Slack Webhook URL, allowing raw message posts."
+
+[[rules]]
+name = "Stripe Publishable Key"
+pattern = '\bpk_(?:live|test)_[0-9a-zA-Z]{24,34}\b'
+description = "Detected Stripe Publishable API Key."
+
+[[rules]]
+name = "Stripe Secret Key"
+pattern = '\bsk_(?:live|test)_[0-9a-zA-Z]{24,34}\b'
+description = "Detected Stripe Secret API Key (exposes account operations)."
+
+[[rules]]
+name = "Google API Key"
+pattern = '\bAIza[0-9A-Za-z-_]{35}\b'
+description = "Detected Google API Key, exposing access to GCP APIs."
+
+[[rules]]
+name = "Generic Private Key"
+pattern = '-----BEGIN (?:RSA|EC|PGP|OPENSSH|DSA)? PRIVATE KEY-----'
+description = "Detected asymmetric Private Key, which controls identity/auth for servers or services."
+
+[[rules]]
+name = "Database Connection String"
+pattern = '\b(?:postgres(?:ql)?|mongodb(?:\+srv)?|redis|mysql|mssql|oracle):\/\/[^:]+:[^@]+@[^/\s]+'
+description = "Detected potential Database Connection URL with inline username and password."
