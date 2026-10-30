@@ -51,14 +51,14 @@ class HookManager:
             if HOOK_TAG in content:
                 os.remove(self.hook_path)
                 return True
-        except Exception as e:
+        except Exception:
             pass
 
         return False
 
     def scan_staged_changes(self, rule_matcher: RuleMatcher) -> List[Dict[str, Any]]:
         """
-        Runs 'git diff --cached -U0 --diff-filter=ACM' to get lines added in the current commit
+        Runs 'git diff --cached -U0' to get lines added in the current commit
         and scans them for leaks.
         """
         findings = []
@@ -67,17 +67,18 @@ class HookManager:
 
         try:
             # -U0 outputs 0 lines of context around diffs
-            cmd = ["git", "diff", "--cached", "-U0", "--diff-filter=ACM"]
+            cmd = ["git", "diff", "--cached", "-U0"]
             result = subprocess.run(
                 cmd,
                 cwd=self.repo_path,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True,
                 encoding="utf-8",
-                errors="ignore",
-                check=True
+                errors="ignore"
             )
+
+            if result.returncode != 0:
+                raise subprocess.CalledProcessError(result.returncode, cmd, result.stdout, result.stderr)
 
             current_file = None
             line_no = 0
@@ -99,7 +100,7 @@ class HookManager:
                     if rule_matcher.is_ignored_file(current_file):
                         continue
 
-                    added_line = line[1:] # Strip leading '+'
+                    added_line = line[1:]  # Strip leading '+'
                     line_findings = rule_matcher.scan_line(added_line, line_no)
                     for f_item in line_findings:
                         findings.append({
@@ -111,7 +112,7 @@ class HookManager:
                             "line_content": added_line.strip()
                         })
 
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             # Git command failed (e.g. no staging changes or not inside a repo)
             pass
 

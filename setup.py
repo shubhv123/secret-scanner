@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="secret-scanner",
     version="1.0.0",
-    packages=find_packages(),
+    packages=find_packages(where='src'),
     entry_points={
         "console_scripts": [
             "secret-scanner=secret_scanner.cli:main",
