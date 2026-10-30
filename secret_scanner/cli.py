@@ -43,7 +43,7 @@ def main(args_list=None):
 
     if not args.command:
         parser.print_help()
-        sys.exit(0)
+        return 0
 
     try:
         # Initialize components
@@ -85,14 +85,14 @@ def main(args_list=None):
         elif args.command == "install-hook":
             hook_manager.install()
             print(f"{formatter.GREEN}{formatter.BOLD}✔ Pre-commit hook successfully installed at .git/hooks/pre-commit{formatter.RESET}")
-            sys.exit(0)
+            return 0
 
         elif args.command == "uninstall-hook":
             if hook_manager.uninstall():
                 print(f"{formatter.GREEN}✔ Pre-commit hook successfully uninstalled.{formatter.RESET}")
             else:
                 print(f"{formatter.YELLOW}No pre-commit hook installed by secret-scanner was found.{formatter.RESET}")
-            sys.exit(0)
+            return 0
 
         # Output formatting
         if args.format == "json":
@@ -103,11 +103,11 @@ def main(args_list=None):
             print(formatter.format_console(findings))
 
         # Exit code: 1 if secrets found (important for git hooks), 0 if clean
-        sys.exit(1 if findings else 0)
+        return 1 if findings else 0
 
     except Exception as e:
         print(f"{formatter.RED}{formatter.BOLD}Error: {str(e)}{formatter.RESET}", file=sys.stderr)
-        sys.exit(2)
+        return 2
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
